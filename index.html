@@ -500,23 +500,11 @@
     try{ box.scrollIntoView({behavior:"smooth", block:"center"}); }catch(e){ box.scrollIntoView(); }
   }
 
-  var wrongEntry = false;
-  try{
-    wrongEntry = !!(tg && inTG && tg.initDataUnsafe && tg.initDataUnsafe.query_id);
-  }catch(e){}
-  if(wrongEntry){
-    warn("<b>Так ответ не дойдёт 🙈</b><br>Закрой это окно и открой приглашение кнопкой " +
-         "<b>«💌 Открыть приглашение»</b> внизу чата — только оттуда ответ отправляется.");
-  }
-
+  // Никаких предварительных блокировок: отправку всегда пробуем по-настоящему.
+  // Если не ушло — об этом скажет страховочный таймер ниже.
   function submit(){
     if(sent || !Object.keys(state.dates).length) return;
     if(tg && inTG){
-      if(wrongEntry){
-        warn("<b>Отсюда ответ не отправится 🙈</b><br>Закрой окно и открой приглашение кнопкой " +
-             "<b>«💌 Открыть приглашение»</b> внизу чата. Выбор, к сожалению, придётся отметить заново.");
-        return;
-      }
       sent = true;
       try{ if(tg.disableClosingConfirmation) tg.disableClosingConfirmation(); }catch(e){}
       try{ if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success"); }catch(e){}
