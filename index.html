@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Вечер по твоим правилам</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --ink:#140d1c;
+    --ink-2:#1b1226;
+    --card:#241933;
+    --card-2:#2c2040;
+    --line:rgba(247,178,103,.16);
+    --line-soft:rgba(246,238,243,.09);
+    --text:#F6EEF3;
+    --muted:#B29FC0;
+    --amber:#F7B267;
+    --rose:#E4849C;
+    --gold:#E9C46A;
+    --shadow:0 18px 50px -24px rgba(0,0,0,.85);
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:"Manrope","Segoe UI",system-ui,sans-serif;
+    font-size:15px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  img{max-width:100%}
+  .glow{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(60% 40% at 18% 2%, rgba(228,132,156,.20), transparent 70%),
+      radial-gradient(55% 38% at 92% 14%, rgba(247,178,103,.16), transparent 72%),
+      radial-gradient(80% 50% at 50% 104%, rgba(120,72,160,.22), transparent 70%);
+  }
+  .wrap{
+    position:relative; z-index:1;
+    max-width:540px; margin:0 auto;
+    padding-left:20px; padding-right:20px;
+    padding-block:calc(30px + env(safe-area-inset-top,0px)) 8px;
+  }
+
+  .eyebrow{
+    font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--amber); font-weight:600; margin:0;
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::after{content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent)}
+  h1{
+    font-family:"Cormorant",Georgia,serif;
+    font-weight:600; font-size:clamp(38px,11vw,52px); line-height:1.02;
+    margin:18px 0 0; text-wrap:balance; letter-spacing:-.01em;
+  }
+  h1 em{font-style:italic; color:var(--gold)}
+  .lede{color:var(--muted); margin:16px 0 0; max-width:34em}
+  .lede b{color:var(--text); font-weight:600}
+  .rule{height:1px; background:var(--line-soft); margin:34px 0 0}
+
+  .step{padding-block:30px; border-bottom:1px solid var(--line-soft)}
+  .step-head{display:flex; align-items:baseline; gap:12px}
+  .num{
+    font-family:"Cormorant",Georgia,serif; font-size:26px; font-weight:600;
+    color:var(--amber); opacity:.7; min-width:28px;
+  }
+  h2{font-family:"Cormorant",Georgia,serif; font-weight:600; font-size:28px; margin:0; letter-spacing:.01em}
+  .hint{color:var(--muted); font-size:13px; margin:6px 0 18px 40px}
+
+  .cal-head{display:flex; align-items:center; justify-content:space-between; margin:0 0 12px; gap:10px}
+  .cal-month{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+  .grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
+  .wd{
+    text-align:center; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); opacity:.65; padding-bottom:4px;
+  }
+  .day{
+    appearance:none; border:1px solid var(--line-soft); background:var(--ink-2);
+    color:var(--text); border-radius:12px; padding:9px 0 8px; cursor:pointer;
+    font-family:inherit; font-size:15px; font-variant-numeric:tabular-nums;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    transition:transform .14s ease, background .14s ease, border-color .14s ease;
+  }
+  .day small{font-size:9px; letter-spacing:.06em; color:var(--muted); text-transform:uppercase}
+  .day:hover:not(:disabled){border-color:var(--line); transform:translateY(-1px)}
+  .day[aria-pressed="true"]{
+    background:linear-gradient(160deg,var(--amber),var(--rose));
+    border-color:transparent; color:#20132b; font-weight:700;
+  }
+  .day[aria-pressed="true"] small{color:rgba(32,19,43,.7)}
+  .day:disabled{opacity:.22; cursor:default}
+
+  .picked{margin-top:18px; display:flex; flex-direction:column; gap:10px}
+  .slot{
+    background:var(--card); border:1px solid var(--line-soft); border-radius:16px;
+    padding:12px 14px; box-shadow:var(--shadow);
+  }
+  .slot-date{
+    font-family:"Cormorant",Georgia,serif; font-size:20px; font-weight:600;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .slot-date button{
+    appearance:none; background:none; border:0; color:var(--muted); cursor:pointer;
+    font-family:inherit; font-size:12px; padding:4px 6px; border-radius:8px;
+  }
+  .slot-date button:hover{color:var(--rose)}
+  .times{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
+
+  .chip{
+    appearance:none; cursor:pointer; font-family:inherit;
+    background:var(--ink-2); border:1px solid var(--line-soft); color:var(--text);
+    border-radius:999px; padding:7px 13px; font-size:13px; line-height:1.25;
+    display:inline-flex; align-items:baseline; gap:7px;
+    transition:border-color .14s ease, background .14s ease, color .14s ease;
+  }
+  .chip span{font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums}
+  .chip[aria-pressed="true"]{background:rgba(247,178,103,.16); border-color:var(--amber); color:var(--gold)}
+  .chip[aria-pressed="true"] span{color:rgba(233,196,106,.75)}
+
+  .tiles{display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:9px}
+  .tile{
+    appearance:none; cursor:pointer; text-align:left; font-family:inherit; color:var(--text);
+    background:var(--card); border:1px solid var(--line-soft); border-radius:14px;
+    padding:12px 13px; transition:border-color .14s ease, background .14s ease, transform .14s ease;
+  }
+  .tile:hover{transform:translateY(-1px); border-color:var(--line)}
+  .tile b{display:block; font-weight:600; font-size:14.5px}
+  .tile i{display:block; font-style:normal; font-size:11.5px; color:var(--muted); margin-top:2px}
+  .tile[aria-pressed="true"]{
+    background:linear-gradient(155deg,rgba(247,178,103,.18),rgba(228,132,156,.14));
+    border-color:var(--amber);
+  }
+  .tile[aria-pressed="true"] b{color:var(--gold)}
+
+  .moods{display:flex; flex-direction:column; gap:8px}
+  .mood{
+    appearance:none; cursor:pointer; text-align:left; font-family:inherit; color:var(--text);
+    background:var(--card); border:1px solid var(--line-soft); border-radius:14px;
+    padding:13px 15px; display:flex; align-items:center; gap:13px;
+    transition:border-color .14s ease, background .14s ease;
+  }
+  .dot{width:9px; height:9px; border-radius:50%; flex:0 0 auto; border:1px solid var(--muted); background:transparent}
+  .mood[aria-pressed="true"]{background:rgba(228,132,156,.13); border-color:var(--rose)}
+  .mood[aria-pressed="true"] .dot{background:var(--rose); border-color:var(--rose); box-shadow:0 0 0 4px rgba(228,132,156,.16)}
+  .mood b{display:block; font-weight:600; font-size:14.5px}
+  .mood i{display:block; font-style:normal; font-size:12px; color:var(--muted)}
+
+  textarea{
+    width:100%; margin-top:4px; resize:vertical; min-height:74px;
+    background:var(--card); color:var(--text); font-family:inherit; font-size:16px;
+    border:1px solid var(--line-soft); border-radius:14px; padding:12px 14px;
+  }
+  textarea::placeholder{color:rgba(178,159,192,.6)}
+  :is(button,textarea,a):focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+
+  .summary{
+    margin-top:26px; background:linear-gradient(170deg,var(--card-2),var(--card));
+    border:1px solid var(--line); border-radius:20px; padding:20px 20px 22px;
+    box-shadow:var(--shadow);
+  }
+  .summary h3{font-family:"Cormorant",Georgia,serif; font-weight:600; font-size:24px; margin:0 0 12px}
+  #out{margin:0; white-space:pre-wrap; font-family:inherit; font-size:14px; line-height:1.65; word-break:break-word}
+  #out.empty{color:var(--muted); font-style:italic}
+
+  .bar{
+    margin:22px 0 0; display:flex; flex-direction:column; gap:9px;
+    padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));
+  }
+  .bar[hidden]{display:none}
+  .send{
+    display:flex; align-items:center; justify-content:center; gap:9px; width:100%;
+    text-decoration:none; font-family:inherit; font-weight:700; font-size:15.5px;
+    background:linear-gradient(120deg,var(--amber),var(--rose));
+    color:#20132b; border:0; border-radius:16px; padding:15px 18px; cursor:pointer;
+    box-shadow:0 12px 30px -14px rgba(247,178,103,.8);
+  }
+  .send[aria-disabled="true"],.send:disabled{opacity:.4; pointer-events:none; box-shadow:none}
+  .copy{
+    appearance:none; cursor:pointer; font-family:inherit; font-size:13.5px;
+    background:transparent; border:1px solid var(--line-soft); color:var(--muted);
+    border-radius:14px; padding:11px 16px;
+  }
+
+  footer{text-align:center; color:var(--muted); font-size:12.5px; padding-block:26px calc(30px + env(safe-area-inset-bottom,0px))}
+  footer em{font-family:"Cormorant",Georgia,serif; font-style:italic; font-size:15px; color:var(--gold)}
+  .tg-pad{height:0}
+  body.in-tg .tg-pad{height:72px}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
+</style>
+</head>
+<body>
+<div class="glow" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">приглашение</p>
+    <h1>Один вечер.<br><em>Твои</em> правила.</h1>
+    <p class="lede" id="lede">Я хочу позвать тебя на свидание — и не хочу угадывать. Выбери здесь всё, что тебе удобно и нравится: <b>когда</b>, <b>что есть</b> и <b>каким должен быть вечер</b>. Остальное — место, стол, дорогу и хорошее настроение — беру на себя.</p>
+    <div class="rule"></div>
+  </header>
+
+  <section class="step">
+    <div class="step-head"><span class="num">I</span><h2>Когда тебе удобно</h2></div>
+    <p class="hint">Отметь все подходящие дни — чем больше, тем проще совпасть. Для каждого выбери время.</p>
+    <div class="cal-head"><span class="cal-month" id="calMonth">—</span></div>
+    <div class="grid" id="cal" role="group" aria-label="Выбор дат"></div>
+    <div class="picked" id="picked"></div>
+  </section>
+
+  <section class="step">
+    <div class="step-head"><span class="num">II</span><h2>Что любишь есть</h2></div>
+    <p class="hint">Можно несколько — выберу лучшее место из того, что тебе по душе.</p>
+    <div class="tiles" id="cuisines"></div>
+  </section>
+
+  <section class="step">
+    <div class="step-head"><span class="num">III</span><h2>Каким должен быть вечер</h2></div>
+    <p class="hint">Одно настроение — под него и соберу программу.</p>
+    <div class="moods" id="moods"></div>
+  </section>
+
+  <section class="step">
+    <div class="step-head"><span class="num">IV</span><h2>Пара слов от тебя</h2></div>
+    <p class="hint">Необязательно. Но мне будет приятно.</p>
+    <textarea id="note" maxlength="400" placeholder="Например: только без громкой музыки / я ужасно люблю десерты / удиви меня"></textarea>
+  </section>
+
+  <div class="summary">
+    <h3>Вот что получилось</h3>
+    <p id="out" class="empty">Пока пусто — начни с дня, который тебе подходит.</p>
+  </div>
+
+  <div class="bar" id="bar">
+    <button class="send" id="send" type="button" disabled>Отправить ответ</button>
+    <button class="copy" id="copy" type="button">Скопировать текстом</button>
+  </div>
+
+  <footer><em>Жду тебя.</em><br>Выбор ни к чему не обязывает — кроме одного хорошего вечера.</footer>
+  <div class="tg-pad"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var tg = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData !== undefined)
+             ? window.Telegram.WebApp : null;
+  var inTG = !!(tg && tg.platform && tg.platform !== "unknown");
+
+  if(tg){
+    try{
+      tg.ready();
+      tg.expand();
+      if(tg.setHeaderColor) tg.setHeaderColor("#140d1c");
+      if(tg.setBackgroundColor) tg.setBackgroundColor("#140d1c");
+      if(tg.enableClosingConfirmation) tg.enableClosingConfirmation();
+    }catch(e){}
+  }
+  if(inTG) document.body.classList.add("in-tg");
+
+  // имя приходит либо от локального сервера (window.__NAME__), либо из ?n= в адресе —
+  // на статическом хостинге подставляет бот, когда строит кнопку
+  var NAME = (window.__NAME__ || "").trim();
+  if(!NAME){
+    try{ NAME = (new URLSearchParams(location.search).get("n") || "").trim(); }catch(e){}
+  }
+  if(NAME){
+    document.getElementById("lede").innerHTML =
+      NAME + ", я хочу позвать тебя на свидание — и не хочу угадывать. " +
+      "Выбери здесь всё, что тебе удобно и нравится: <b>когда</b>, <b>что есть</b> и " +
+      "<b>каким должен быть вечер</b>. Остальное — место, стол, дорогу и хорошее настроение — беру на себя.";
+  }
+
+  function haptic(kind){
+    try{ if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred(kind || "light"); }catch(e){}
+  }
+
+  var MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  var MONTHS_N = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+  var WD_SHORT = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+  var WD_FULL = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
+
+  var TIMES = [
+    {id:"day",  label:"День",          when:"13:00–16:00"},
+    {id:"eve",  label:"Вечер",         when:"18:00–20:00"},
+    {id:"late", label:"Поздний вечер", when:"после 21:00"}
+  ];
+  var CUISINES = [
+    {id:"it",  name:"Итальянская",    note:"паста, вино, тихий свет"},
+    {id:"jp",  name:"Японская",       note:"суши, рамен, сакэ"},
+    {id:"ge",  name:"Грузинская",     note:"хинкали и много вкусного"},
+    {id:"asia",name:"Паназия",        note:"вок, том-ям, остро"},
+    {id:"me",  name:"Ближний Восток", note:"хумус, мангал, мезе"},
+    {id:"fr",  name:"Французская",    note:"десерты и неспешно"},
+    {id:"us",  name:"Бургеры и мясо", note:"честно и без церемоний"},
+    {id:"veg", name:"Лёгкое / веган", note:"боулы, салаты, смузи"},
+    {id:"cof", name:"Кофе и десерты", note:"если ужин — это много"},
+    {id:"any", name:"Удиви меня",     note:"доверяю твоему вкусу"}
+  ];
+  var MOODS = [
+    {id:"talk", name:"Тихо и поговорить",  note:"уютное место, где слышно друг друга"},
+    {id:"fun",  name:"Активно и весело",   note:"движение, смех, немного авантюры"},
+    {id:"walk", name:"Прогулка без плана", note:"идём куда захочется, еда по пути"},
+    {id:"new",  name:"Что-то новое",       note:"место или занятие, где ты ещё не была"},
+    {id:"cozy", name:"Максимально спокойно", note:"никуда не спешим, просто хорошо"}
+  ];
+
+  var state = { dates:{}, cuisines:[], mood:null };
+
+  var calEl = document.getElementById("cal");
+  var monthEl = document.getElementById("calMonth");
+  var pickedEl = document.getElementById("picked");
+  var outEl = document.getElementById("out");
+  var sendEl = document.getElementById("send");
+  var copyEl = document.getElementById("copy");
+  var noteEl = document.getElementById("note");
+  var barEl = document.getElementById("bar");
+
+  function iso(d){
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+  function fromIso(s){ var p = s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function mondayIndex(d){ return (d.getDay() + 6) % 7; }
+  function dateLabel(key){
+    var d = fromIso(key);
+    return WD_FULL[mondayIndex(d)] + ", " + d.getDate() + " " + MONTHS[d.getMonth()];
+  }
+
+  function buildCalendar(){
+    var today = new Date(); today.setHours(0,0,0,0);
+    var start = new Date(today); start.setDate(start.getDate() - mondayIndex(today));
+    var months = [], i, f = document.createDocumentFragment();
+
+    for(i=0;i<7;i++){
+      var wd = document.createElement("div");
+      wd.className = "wd"; wd.textContent = WD_SHORT[i];
+      f.appendChild(wd);
+    }
+    for(i=0;i<28;i++){
+      var d = new Date(start); d.setDate(start.getDate() + i);
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "day";
+      b.setAttribute("aria-pressed","false");
+      b.dataset.date = iso(d);
+      var num = document.createElement("span");
+      num.textContent = d.getDate();
+      b.appendChild(num);
+      if(d.getDate() === 1 || i === 0){
+        var s = document.createElement("small");
+        s.textContent = MONTHS[d.getMonth()].slice(0,3);
+        b.appendChild(s);
+      }
+      b.setAttribute("aria-label", d.getDate() + " " + MONTHS[d.getMonth()]);
+      if(d < today){ b.disabled = true; } else { months.push(d.getMonth()); }
+      f.appendChild(b);
+    }
+    calEl.appendChild(f);
+
+    var uniq = months.filter(function(m,ix){ return months.indexOf(m) === ix; });
+    monthEl.textContent = uniq.map(function(m){ return MONTHS_N[m]; }).join(" — ");
+
+    calEl.addEventListener("click", function(e){
+      var btn = e.target.closest(".day");
+      if(!btn || btn.disabled) return;
+      var k = btn.dataset.date;
+      if(state.dates[k]){ delete state.dates[k]; btn.setAttribute("aria-pressed","false"); }
+      else { state.dates[k] = ["eve"]; btn.setAttribute("aria-pressed","true"); }
+      haptic("light"); renderPicked(); render();
+    });
+  }
+
+  function renderPicked(){
+    var keys = Object.keys(state.dates).sort();
+    pickedEl.textContent = "";
+    keys.forEach(function(key){
+      var box = document.createElement("div"); box.className = "slot";
+      var head = document.createElement("div"); head.className = "slot-date";
+      var title = document.createElement("span"); title.textContent = dateLabel(key);
+      var drop = document.createElement("button");
+      drop.type = "button"; drop.textContent = "убрать";
+      drop.addEventListener("click", function(){
+        delete state.dates[key];
+        var db = calEl.querySelector('.day[data-date="' + key + '"]');
+        if(db) db.setAttribute("aria-pressed","false");
+        haptic("light"); renderPicked(); render();
+      });
+      head.appendChild(title); head.appendChild(drop);
+
+      var row = document.createElement("div"); row.className = "times";
+      TIMES.forEach(function(t){
+        var c = document.createElement("button");
+        c.type = "button"; c.className = "chip";
+        c.setAttribute("aria-pressed", state.dates[key].indexOf(t.id) > -1 ? "true" : "false");
+        c.innerHTML = t.label + " <span>" + t.when + "</span>";
+        c.addEventListener("click", function(){
+          var list = state.dates[key], ix = list.indexOf(t.id);
+          if(ix > -1) list.splice(ix,1); else list.push(t.id);
+          c.setAttribute("aria-pressed", list.indexOf(t.id) > -1 ? "true" : "false");
+          haptic("light"); render();
+        });
+        row.appendChild(c);
+      });
+      box.appendChild(head); box.appendChild(row);
+      pickedEl.appendChild(box);
+    });
+  }
+
+  function buildTiles(){
+    var host = document.getElementById("cuisines");
+    CUISINES.forEach(function(c){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "tile"; b.setAttribute("aria-pressed","false");
+      b.innerHTML = "<b>" + c.name + "</b><i>" + c.note + "</i>";
+      b.addEventListener("click", function(){
+        var ix = state.cuisines.indexOf(c.id);
+        if(ix > -1) state.cuisines.splice(ix,1); else state.cuisines.push(c.id);
+        b.setAttribute("aria-pressed", state.cuisines.indexOf(c.id) > -1 ? "true" : "false");
+        haptic("light"); render();
+      });
+      host.appendChild(b);
+    });
+  }
+
+  function buildMoods(){
+    var host = document.getElementById("moods");
+    MOODS.forEach(function(m){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "mood"; b.setAttribute("aria-pressed","false");
+      b.innerHTML = '<span class="dot"></span><span><b>' + m.name + "</b><i>" + m.note + "</i></span>";
+      b.addEventListener("click", function(){
+        state.mood = (state.mood === m.id) ? null : m.id;
+        Array.prototype.forEach.call(host.children, function(el){ el.setAttribute("aria-pressed","false"); });
+        if(state.mood) b.setAttribute("aria-pressed","true");
+        haptic("light"); render();
+      });
+      host.appendChild(b);
+    });
+  }
+
+  function timeNames(ids){
+    if(!ids.length) return "время на твоё усмотрение";
+    return TIMES.filter(function(t){ return ids.indexOf(t.id) > -1; })
+                .map(function(t){ return t.label.toLowerCase() + " (" + t.when + ")"; }).join(", ");
+  }
+
+  function buildText(){
+    var keys = Object.keys(state.dates).sort();
+    var lines = ["Мой ответ на приглашение ✨", "", "Когда мне удобно:"];
+    keys.forEach(function(k){ lines.push("• " + dateLabel(k) + " — " + timeNames(state.dates[k])); });
+    if(state.cuisines.length){
+      lines.push("");
+      lines.push("Кухня: " + CUISINES.filter(function(c){ return state.cuisines.indexOf(c.id) > -1; })
+        .map(function(c){ return c.name.toLowerCase(); }).join(", "));
+    }
+    if(state.mood){
+      var m = MOODS.filter(function(x){ return x.id === state.mood; })[0];
+      lines.push("Настроение вечера: " + m.name.toLowerCase());
+    }
+    var note = noteEl.value.trim();
+    if(note){ lines.push(""); lines.push("От меня: " + note); }
+    lines.push(""); lines.push("Да, я согласна 💌");
+    return lines.join("\n");
+  }
+
+  function payload(){
+    return {
+      dates: Object.keys(state.dates).sort().map(function(k){ return {date:k, times:state.dates[k]}; }),
+      cuisines: state.cuisines.slice(),
+      mood: state.mood,
+      note: noteEl.value.trim().slice(0,400)
+    };
+  }
+
+  var sent = false;
+
+  function submit(){
+    if(sent || !Object.keys(state.dates).length) return;
+    if(tg && inTG){
+      sent = true;
+      try{ if(tg.disableClosingConfirmation) tg.disableClosingConfirmation(); }catch(e){}
+      try{ if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success"); }catch(e){}
+      tg.sendData(JSON.stringify(payload()));
+      setTimeout(function(){ try{ tg.close(); }catch(e){} }, 300);
+    } else {
+      copyText(buildText());
+    }
+  }
+
+  function copyText(text){
+    var done = function(){
+      var old = copyEl.textContent;
+      copyEl.textContent = "Скопировано ✓";
+      setTimeout(function(){ copyEl.textContent = old; }, 1800);
+    };
+    var fallback = function(){
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); done(); }
+      catch(e){ copyEl.textContent = "Выдели текст выше и скопируй"; }
+      document.body.removeChild(ta);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+  }
+
+  function render(){
+    var ready = Object.keys(state.dates).length > 0;
+    if(ready){
+      outEl.className = "";
+      outEl.textContent = buildText();
+    } else {
+      outEl.className = "empty";
+      outEl.textContent = "Пока пусто — начни с дня, который тебе подходит.";
+    }
+    sendEl.disabled = !ready;
+
+    if(tg && inTG && tg.MainButton){
+      try{
+        if(ready){
+          tg.MainButton.setParams({
+            text: "ОТПРАВИТЬ ОТВЕТ",
+            color: "#F7B267",
+            text_color: "#20132B",
+            is_active: true,
+            is_visible: true
+          });
+        } else {
+          tg.MainButton.hide();
+        }
+      }catch(e){}
+    }
+  }
+
+  sendEl.addEventListener("click", submit);
+  copyEl.addEventListener("click", function(){
+    copyText(Object.keys(state.dates).length ? buildText() : outEl.textContent);
+  });
+  noteEl.addEventListener("input", render);
+
+  if(tg && inTG){
+    try{ tg.MainButton.onClick(submit); }catch(e){}
+    barEl.hidden = true;
+  }
+
+  buildCalendar();
+  buildTiles();
+  buildMoods();
+  render();
+})();
+</script>
+</body>
+</html>
