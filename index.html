@@ -160,6 +160,13 @@
   textarea::placeholder{color:rgba(178,159,192,.6)}
   :is(button,textarea,a):focus-visible{outline:2px solid var(--gold); outline-offset:2px}
 
+  .warn{
+    margin-top:22px; padding:15px 17px; border-radius:16px;
+    background:rgba(228,132,156,.14); border:1px solid var(--rose);
+    color:var(--text); font-size:14px; line-height:1.55;
+  }
+  .warn b{color:var(--rose)}
+
   .summary{
     margin-top:26px; background:linear-gradient(170deg,var(--card-2),var(--card));
     border:1px solid var(--line); border-radius:20px; padding:20px 20px 22px;
@@ -232,6 +239,8 @@
     <p class="hint">Необязательно. Но мне будет приятно.</p>
     <textarea id="note" maxlength="400" placeholder="Например: только без громкой музыки / я ужасно люблю десерты / удиви меня"></textarea>
   </section>
+
+  <div class="warn" id="warn" hidden></div>
 
   <div class="summary">
     <h3>Вот что получилось</h3>
@@ -481,14 +490,46 @@
 
   var sent = false;
 
+  // sendData() работает ТОЛЬКО когда Mini App открыт из кнопки reply-клавиатуры.
+  // Из кнопки-меню, inline-кнопки или прямой ссылки данные молча теряются,
+  // поэтому предупреждаем заранее и страхуемся таймером.
+  function warn(html){
+    var box = document.getElementById("warn");
+    box.innerHTML = html;
+    box.hidden = false;
+    try{ box.scrollIntoView({behavior:"smooth", block:"center"}); }catch(e){ box.scrollIntoView(); }
+  }
+
+  var wrongEntry = false;
+  try{
+    wrongEntry = !!(tg && inTG && tg.initDataUnsafe && tg.initDataUnsafe.query_id);
+  }catch(e){}
+  if(wrongEntry){
+    warn("<b>Так ответ не дойдёт 🙈</b><br>Закрой это окно и открой приглашение кнопкой " +
+         "<b>«💌 Открыть приглашение»</b> внизу чата — только оттуда ответ отправляется.");
+  }
+
   function submit(){
     if(sent || !Object.keys(state.dates).length) return;
     if(tg && inTG){
+      if(wrongEntry){
+        warn("<b>Отсюда ответ не отправится 🙈</b><br>Закрой окно и открой приглашение кнопкой " +
+             "<b>«💌 Открыть приглашение»</b> внизу чата. Выбор, к сожалению, придётся отметить заново.");
+        return;
+      }
       sent = true;
       try{ if(tg.disableClosingConfirmation) tg.disableClosingConfirmation(); }catch(e){}
       try{ if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success"); }catch(e){}
       tg.sendData(JSON.stringify(payload()));
       setTimeout(function(){ try{ tg.close(); }catch(e){} }, 300);
+      // успешный sendData закрывает приложение сразу; если мы всё ещё здесь — не ушло
+      setTimeout(function(){
+        sent = false;
+        warn("<b>Кажется, ответ не ушёл 🙈</b><br>Открой приглашение кнопкой " +
+             "<b>«💌 Открыть приглашение»</b> внизу чата и попробуй снова — или нажми " +
+             "«Скопировать текстом» и пришли сообщением.");
+        barEl.hidden = false;
+      }, 2500);
     } else {
       copyText(buildText());
     }
